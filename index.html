@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset=utf-8 />
+    <title>Green(er) Energy Power Plants</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: whitesmoke;
+            font-family: Lato, sans-serif;
+            color: #0D0000;
+        }
+
+        header {
+            padding: 6px 10%;
+        }
+
+        h1 {
+            display: inline-block;
+            margin-right: 20px;
+            color: #001323;
+        }
+
+        h2 {
+            display: inline-block;
+            color: #001323;
+        }
+
+        #map {
+            width: 80%;
+            height: 540px;
+            margin: 10px auto;
+        }
+
+        footer {
+            padding: 6px 10%;
+            width: 80%;
+        }
+
+        p {
+            font-size: 1em;
+            color: #001323;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Green(er) Energy Power Plants</h1>
+        <h2>Solar and Biomass Fuel Power Plants in the US</h2>
+    </header>
+
+    <div id='map'></div>
+
+    <footer>
+        <p>Map authored by Ian Horn</p>
+          <p>Fuel sources across the US vary by fuel source.  This map displays power plants that use the less than traditional <a href="https://en.wikipedia.org/wiki/Alternative_energy v">fuels</a> as sources for energy production</p>
+    </footer>
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+    <script src="data/power-plants.js"></script>
+    <script>
+        var map = L.map('map', {
+            center: [36, -94],
+            zoom: 3,
+        });
+
+        var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        });
+        tiles.addTo(map);
+        //Start Lab
+
+        var solarStyles = { //style for solar plants
+            weight: 1,
+            stroke: .5,
+            fillOpacity: .6
+        }
+
+        var biomassStyles = { //style for biomass plants
+            weight: 1,
+            stroke: 1,
+            fillOpacity: .9
+        }
+
+
+        var biomassrLayer = L.geoJson(plants, { //create point layer for biomass
+            pointToLayer: function(feature, latlng) {
+                return L.circleMarker(latlng, biomassStyles);
+            },
+            filter: function(feature) { //filter for Biomass
+                if (feature.properties.fuel_source.Biomass) {
+                    return feature;
+                  }
+            },
+            style: function(feature) { //style Biomass
+                return {
+                    color: '#0ed11b',
+                    radius: getRadius(feature.properties.fuel_source.Biomass)
+                }
+            },
+            onEachFeature: function(feature, layer) { //create mouseover affordance
+                layer.on('mouseover', function() {
+                    layer.setStyle({
+                        fillColor: 'red'
+                    });
+                });
+                layer.on('mouseout', function() {
+                    layer.setStyle({
+                        fillColor: '#0ed11b'
+                    });
+                });
+
+                // begin string values for tooltip
+                var tooltipString = '<b>' +
+                    feature.properties.plant_name + '</b>' +
+                    '<br>total capacity: ' + feature.properties.capacity_mw + 'MW</br>';
+
+                // shortcut to the fuel source object
+                var fuelSources = feature.properties.fuel_source //access fuel sources object
+
+                // loop through the fuel source object
+                for (var fuel in fuelSources) {
+                    // concatenate new info on to string
+                    tooltipString += fuel + ': ' + fuelSources[fuel] + 'MW <br />';
+                }
+
+                // bind the tooltip string to the tooltip
+                layer.bindTooltip(tooltipString);
+
+            }
+        }).addTo(map);
+
+
+        var solarLayer = L.geoJson(plants, { //create point layer for Solar
+            pointToLayer: function(feature, latlng) {
+                return L.circleMarker(latlng, solarStyles);
+            },
+            filter: function(feature) { //filter for soalr
+                if (feature.properties.fuel_source.Solar) {
+                    return feature;
+                }
+            }, //  fillColor: '#f1f442',
+            style: function(feature) {
+                return {
+                    color: '#f1f442',
+                    radius: getRadius(feature.properties.fuel_source.Solar)
+                }
+            },
+            onEachFeature: function(feature, layer) { //create mouseover affordance
+                layer.on('mouseover', function() {
+                    layer.setStyle({
+                        fillColor: 'red'
+                    });
+                });
+                layer.on('mouseout', function() {
+                    layer.setStyle({
+                        fillColor: '#f1f442'
+                    });
+                });
+
+                var tooltipString = '<b>' +
+                    feature.properties.plant_name + '</b>' +
+                    '<br>total capacity: ' + feature.properties.capacity_mw + 'MW</br>';
+
+                // shortcut to the fuel source object
+                var fuelSources = feature.properties.fuel_source //access fuel sources object
+
+                // loop through the fuel source object
+                for (var fuel in fuelSources) {
+                    // concatenate new info on to string
+                    tooltipString += fuel + ': ' + fuelSources[fuel] + 'MW <br />';
+                }
+
+                // bind the tooltip string to the tooltip
+                layer.bindTooltip(tooltipString);
+            }
+        }).addTo(map)
+
+
+        function getRadius(area) {
+            var radius = Math.sqrt(area / Math.PI);
+            return radius * 1.6;
+            //used a 6x multiplier because at small scale hard to mouseover
+        }
+    </script>
+
+</body>
+
+</html>
